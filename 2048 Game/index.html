@@ -2,21 +2,122 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>2048</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <title>2048 — Free Online Puzzle Game</title>
+    <meta name="description" content="Play 2048 free in your browser. Slide tiles, merge numbers and chase the 2048 tile. Works on phone and desktop, saves your progress and plays offline.">
+    <meta name="theme-color" content="#0e0e12">
+    <link rel="canonical" href="https://2048-classic-game.netlify.app/">
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="2048 — Free Online Puzzle Game">
+    <meta property="og:description" content="Slide, merge, reach 2048. Free, no sign-up, works offline.">
+    <meta property="og:url" content="https://2048-classic-game.netlify.app/">
+    <meta property="og:image" content="https://2048-classic-game.netlify.app/fav.png">
+    <link rel="icon" href="icon.svg" type="image/svg+xml">
+    <link rel="alternate icon" href="fav.png" type="image/png">
+    <link rel="apple-touch-icon" href="fav.png">
+    <link rel="manifest" href="manifest.webmanifest">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=Unbounded:wght@700;900&display=swap">
     <link rel="stylesheet" href="style.css">
-    <link rel="shortcut icon" href="./fav.png" type="image/x-icon">
-    <script src="main.js"></script>
+    <script src="main.js" defer></script>
 </head>
 <body>
-    <h1>2048</h1>
-    <hr>
-    <h2>Score : <span id="score">0</span></h2>
-    <div id="board"></div>  
+    <main class="app">
+        <header class="top">
+            <h1 class="logo">2048</h1>
+            <div class="scores">
+                <div class="score-box" id="score-box">
+                    <span class="label">Score</span>
+                    <span class="value" id="score">0</span>
+                </div>
+                <div class="score-box">
+                    <span class="label">Best</span>
+                    <span class="value" id="best">0</span>
+                </div>
+            </div>
+        </header>
+
+        <div class="toolbar">
+            <div class="sizes" id="sizes" role="radiogroup" aria-label="Board size">
+                <button type="button" role="radio" data-size="3">3×3</button>
+                <button type="button" role="radio" data-size="4">4×4</button>
+                <button type="button" role="radio" data-size="5">5×5</button>
+                <button type="button" role="radio" data-size="6">6×6</button>
+            </div>
+            <div class="actions">
+                <button type="button" class="btn" id="undo" title="Undo (U)">
+                    Undo <span class="badge" id="undo-count">3</span>
+                </button>
+                <button type="button" class="btn btn-accent" id="new-game">New game</button>
+            </div>
+        </div>
+
+        <section class="board-wrap" id="board" aria-label="Game board">
+            <div class="grid" id="grid"></div>
+            <div class="tiles" id="tiles"></div>
+            <div class="overlay" id="overlay" hidden>
+                <p class="overlay-kicker" id="overlay-kicker"></p>
+                <h2 class="overlay-title" id="overlay-title"></h2>
+                <p class="overlay-text" id="overlay-text"></p>
+                <div class="overlay-actions" id="overlay-actions"></div>
+            </div>
+        </section>
+
+        <div class="subbar">
+            <p class="hint">
+                <span class="hint-keys"><kbd>←</kbd><kbd>↑</kbd><kbd>→</kbd><kbd>↓</kbd> or <kbd>WASD</kbd> to move · <kbd>U</kbd> undo</span>
+                <span class="hint-touch">Swipe on the board to move tiles</span>
+            </p>
+            <div class="icon-btns">
+                <button type="button" class="icon-btn" id="sound" aria-label="Sound" aria-pressed="true" title="Sound">
+                    <svg class="on" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9v6h4l5 4V5L8 9H4z" fill="currentColor"/><path d="M16 8.5a5 5 0 0 1 0 7M18.5 6a8.5 8.5 0 0 1 0 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+                    <svg class="off" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9v6h4l5 4V5L8 9H4z" fill="currentColor"/><path d="M16.5 9.5l5 5M21.5 9.5l-5 5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+                </button>
+                <button type="button" class="icon-btn" id="stats-btn" aria-label="Stats" title="Stats">
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 20V12M12 20V4M19 20v-6" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/></svg>
+                </button>
+                <button type="button" class="icon-btn" id="share-btn" aria-label="Share score" title="Share score">
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12M7 8l5-5 5 5M5 13v6a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                </button>
+            </div>
+        </div>
+
+        <section class="how">
+            <h2>How to play</h2>
+            <ol>
+                <li>Swipe or use the arrow keys to slide <strong>every tile</strong> at once.</li>
+                <li>Two tiles with the same number <strong>merge into one</strong> when they touch.</li>
+                <li>After every move a new 2 or 4 appears. Plan ahead so the board doesn't fill up.</li>
+                <li>Make a <strong>2048</strong> tile to win, then keep going as far as you can.</li>
+            </ol>
+            <p class="tip">Tip: keep your biggest tile in a corner and build towards it.</p>
+        </section>
+    </main>
 
     <footer>
-       <p> &copy; 2023 2048 Game | Made By <a href="https://peterkiarie.com/" target="_blank" rel="noopener noreferrer">Peter Kiarie</a></p>
+        <p>&copy; 2023–<span id="year">2026</span> 2048 · Made by <a href="https://peterkiarie.com/" target="_blank" rel="noopener noreferrer">Peter Kiarie</a></p>
     </footer>
+
+    <dialog id="stats" aria-labelledby="stats-title">
+        <div class="dialog-head">
+            <h2 id="stats-title">Your stats</h2>
+            <form method="dialog"><button class="icon-btn" aria-label="Close">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/></svg>
+            </button></form>
+        </div>
+        <div class="stat-grid">
+            <div class="stat"><b id="stat-played">0</b><span>Games played</span></div>
+            <div class="stat"><b id="stat-won">0</b><span>Times reached 2048</span></div>
+            <div class="stat"><b id="stat-tile">0</b><span>Highest tile</span></div>
+            <div class="stat"><b id="stat-merges">0</b><span>Total merges</span></div>
+        </div>
+        <h3>Best score by board</h3>
+        <ul class="bests" id="stat-bests"></ul>
+    </dialog>
+
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+    <noscript><p class="noscript">2048 needs JavaScript to run.</p></noscript>
 </body>
 </html>
