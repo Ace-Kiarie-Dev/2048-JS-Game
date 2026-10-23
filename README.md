@@ -57,4 +57,4 @@ node -e "const fs=require('fs'); const b=fs.readFileSync('2048 Game/logo_nx_gami
 
 ---
 
-Made by [Peter Kiarie](https://peterkiarie.com/)
+Made by [Peter Kiarie](https://nesturex.com/)
