@@ -2,21 +2,177 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>2048</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <script>
+        // Assets use relative paths. Served without a trailing slash (e.g. /nx-gaming/2048),
+        // they'd resolve one folder too high, so point them back into the game's folder.
+        // nesturex.com injects a <base> server-side already; this is the fallback for other hosts.
+        (function () {
+            var p = location.pathname;
+            if (!document.querySelector("base") && !/\/$|\.html?$/.test(p)) {
+                document.write('<base href="' + p + '/">');
+            }
+        })();
+    </script>
+    <title>2048 — Free Online Puzzle Game | NX Gaming</title>
+    <meta name="description" content="Play 2048 free in your browser. Slide tiles, merge numbers and chase the 2048 tile. Works on phone and desktop, saves your progress and plays offline.">
+    <meta name="theme-color" content="#0e0e12">
+    <link rel="canonical" href="https://nesturex.com/nx-gaming/2048">
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="NX Gaming">
+    <meta property="og:title" content="2048 by NX Gaming — Free Online Puzzle Game">
+    <meta property="og:description" content="Slide, merge, reach 2048. Free, no sign-up, works offline.">
+    <meta property="og:url" content="https://nesturex.com/nx-gaming/2048">
+    <meta property="og:image" content="https://nesturex.com/nx-gaming/2048/og.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta name="twitter:card" content="summary_large_image">
+    <link rel="icon" href="icon.svg" type="image/svg+xml">
+    <link rel="alternate icon" href="fav.png" type="image/png">
+    <link rel="apple-touch-icon" href="fav.png">
+    <link rel="manifest" href="manifest.webmanifest">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=Unbounded:wght@700;900&display=swap">
     <link rel="stylesheet" href="style.css">
-    <link rel="shortcut icon" href="./fav.png" type="image/x-icon">
-    <script src="main.js"></script>
+    <script src="brand.js" defer></script>
+    <script src="main.js" defer></script>
 </head>
 <body>
-    <h1>2048</h1>
-    <hr>
-    <h2>Score : <span id="score">0</span></h2>
-    <div id="board"></div>  
+    <main class="app">
+        <div class="brand-bar">
+            <span class="brand"><img src="logo_nx_gaming.webp" alt="NX Gaming" width="1200" height="152"></span>
+            <span class="brand-note">Free to play · No sign-up</span>
+        </div>
+
+        <header class="top">
+            <h1 class="logo">2048</h1>
+            <div class="scores">
+                <div class="score-box" id="score-box">
+                    <span class="label">Score</span>
+                    <span class="value" id="score">0</span>
+                </div>
+                <div class="score-box">
+                    <span class="label">Best</span>
+                    <span class="value" id="best">0</span>
+                </div>
+            </div>
+        </header>
+
+        <div class="toolbar">
+            <div class="sizes" id="sizes" role="radiogroup" aria-label="Board size">
+                <button type="button" role="radio" data-size="3">3×3</button>
+                <button type="button" role="radio" data-size="4">4×4</button>
+                <button type="button" role="radio" data-size="5">5×5</button>
+                <button type="button" role="radio" data-size="6">6×6</button>
+            </div>
+            <div class="actions">
+                <button type="button" class="btn" id="undo" title="Undo (U)">
+                    Undo <span class="badge" id="undo-count">3</span>
+                </button>
+                <button type="button" class="btn btn-accent" id="new-game">New game</button>
+            </div>
+        </div>
+
+        <section class="board-wrap" id="board" aria-label="Game board">
+            <div class="grid" id="grid"></div>
+            <div class="tiles" id="tiles"></div>
+            <div class="overlay" id="overlay" hidden>
+                <p class="overlay-kicker" id="overlay-kicker"></p>
+                <h2 class="overlay-title" id="overlay-title"></h2>
+                <p class="overlay-text" id="overlay-text"></p>
+                <div class="overlay-actions" id="overlay-actions"></div>
+            </div>
+        </section>
+
+        <div class="subbar">
+            <p class="hint">
+                <span class="hint-keys"><kbd>←</kbd><kbd>↑</kbd><kbd>→</kbd><kbd>↓</kbd> or <kbd>WASD</kbd> to move · <kbd>U</kbd> undo</span>
+                <span class="hint-touch">Swipe on the board to move tiles</span>
+            </p>
+            <div class="icon-btns">
+                <button type="button" class="icon-btn" id="sound" aria-label="Sound" aria-pressed="true" title="Sound">
+                    <svg class="on" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9v6h4l5 4V5L8 9H4z" fill="currentColor"/><path d="M16 8.5a5 5 0 0 1 0 7M18.5 6a8.5 8.5 0 0 1 0 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+                    <svg class="off" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9v6h4l5 4V5L8 9H4z" fill="currentColor"/><path d="M16.5 9.5l5 5M21.5 9.5l-5 5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+                </button>
+                <button type="button" class="icon-btn" id="stats-btn" aria-label="Stats" title="Stats">
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 20V12M12 20V4M19 20v-6" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/></svg>
+                </button>
+                <button type="button" class="icon-btn" id="share-btn" aria-label="Share score" title="Share score">
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12M7 8l5-5 5 5M5 13v6a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                </button>
+            </div>
+        </div>
+
+        <section class="how">
+            <h2>How to play</h2>
+            <ol>
+                <li>Swipe or use the arrow keys to slide <strong>every tile</strong> at once.</li>
+                <li>Two tiles with the same number <strong>merge into one</strong> when they touch.</li>
+                <li>After every move a new 2 or 4 appears. Plan ahead so the board doesn't fill up.</li>
+                <li>Make a <strong>2048</strong> tile to win, then keep going as far as you can.</li>
+            </ol>
+            <p class="tip">Tip: keep your biggest tile in a corner and build towards it.</p>
+        </section>
+    </main>
 
     <footer>
-       <p> &copy; 2023 2048 Game | Made By <a href="https://peterkiarie.com/" target="_blank" rel="noopener noreferrer">Peter Kiarie</a></p>
+        <p>&copy; 2023–<span id="year">2026</span> 2048 · An NX Gaming game · Made by <a href="https://nesturex.com/" target="_blank" rel="noopener">Peter Kiarie</a></p>
     </footer>
+
+    <dialog id="stats" aria-labelledby="stats-title">
+        <div class="dialog-head">
+            <h2 id="stats-title">Your stats</h2>
+            <form method="dialog"><button class="icon-btn" aria-label="Close">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/></svg>
+            </button></form>
+        </div>
+        <div class="stat-grid">
+            <div class="stat"><b id="stat-played">0</b><span>Games played</span></div>
+            <div class="stat"><b id="stat-won">0</b><span>Times reached 2048</span></div>
+            <div class="stat"><b id="stat-tile">0</b><span>Highest tile</span></div>
+            <div class="stat"><b id="stat-merges">0</b><span>Total merges</span></div>
+        </div>
+        <h3>Best score by board</h3>
+        <ul class="bests" id="stat-bests"></ul>
+    </dialog>
+
+    <dialog id="share" class="share-dialog" aria-labelledby="share-title">
+        <div class="dialog-head">
+            <h2 id="share-title">Share your score</h2>
+            <form method="dialog"><button class="icon-btn" aria-label="Close">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/></svg>
+            </button></form>
+        </div>
+        <div class="share-preview" id="share-preview">
+            <img id="share-img" alt="Your 2048 score card">
+        </div>
+        <div class="share-actions">
+            <button type="button" class="btn btn-accent" id="share-native">Share image</button>
+            <button type="button" class="btn" id="share-download">Download</button>
+            <button type="button" class="btn" id="share-copy">Copy image</button>
+        </div>
+        <div class="share-links">
+            <a class="social social-wa" id="share-wa" target="_blank" rel="noopener noreferrer">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.2a9.8 9.8 0 0 0-8.4 14.8L2.2 21.8l4.9-1.3A9.8 9.8 0 1 0 12 2.2z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M8.7 7.3c.2-.4.4-.4.7-.4h.5c.2 0 .4 0 .6.5l.8 1.9c.1.2.1.4 0 .6l-.4.6-.4.4c-.1.1-.3.3-.1.6.2.3.8 1.3 1.7 2.1 1.2 1 2.1 1.3 2.4 1.5.3.1.5.1.6-.1l.9-1.1c.2-.3.4-.2.6-.1l1.9.9c.3.1.4.2.5.3 0 .2 0 .9-.3 1.6-.3.7-1.6 1.4-2.2 1.4-.6.1-1.1.3-3.8-.8-3.2-1.3-5.2-4.5-5.4-4.7-.2-.2-1.3-1.7-1.3-3.3 0-1.6.8-2.3 1.1-2.6z" fill="currentColor"/></svg>
+                WhatsApp
+            </a>
+            <a class="social social-x" id="share-x" target="_blank" rel="noopener noreferrer">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18.9 1.2h3.7l-8 9.2L24 22.8h-7.4l-5.8-7.6-6.6 7.6H.5l8.6-9.8L0 1.2h7.6l5.2 6.9zM17.6 20.6h2L6.5 3.2H4.3z" fill="currentColor"/></svg>
+                Post on X
+            </a>
+            <a class="social social-fb" id="share-fb" target="_blank" rel="noopener noreferrer">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M13.6 22v-8.1h2.8l.4-3.3h-3.2V8.5c0-.9.3-1.6 1.6-1.6h1.7V4c-.3 0-1.3-.1-2.5-.1-2.5 0-4.2 1.5-4.2 4.3v2.4H7.4v3.3h2.8V22z" fill="currentColor"/></svg>
+                Facebook
+            </a>
+            <button type="button" class="social social-link" id="share-link">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 14a4.5 4.5 0 0 0 6.4 0l3.2-3.2a4.5 4.5 0 0 0-6.4-6.4l-1 1M14 10a4.5 4.5 0 0 0-6.4 0l-3.2 3.2a4.5 4.5 0 0 0 6.4 6.4l1-1" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+                Copy link
+            </button>
+        </div>
+        <p class="share-status" id="share-status" role="status" aria-live="polite"></p>
+    </dialog>
+
+    <noscript><p class="noscript">2048 needs JavaScript to run.</p></noscript>
 </body>
 </html>
