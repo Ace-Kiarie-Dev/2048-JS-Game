@@ -429,7 +429,7 @@
     const CARD = 1080;
     const DISPLAY = 'Unbounded, "Arial Black", sans-serif';
     const UI_FONT = '"Space Grotesk", system-ui, sans-serif';
-    const CANONICAL = "https://2048-classic-game.netlify.app/";
+    const CANONICAL = "https://nesturex.com/nx-gaming/2048";
 
     const logo = new Image();
     logo.src = window.NX_LOGO || "logo_nx_gaming.webp"; // inline copy keeps the canvas exportable
@@ -616,7 +616,7 @@
         ctx.fillText("Can you beat it?", 130, 900);
         ctx.fillStyle = "#c6f35a";
         ctx.font = `700 32px ${UI_FONT}`;
-        ctx.fillText(`Play free → ${new URL(shareUrl()).host}`, 130, 954);
+        ctx.fillText(`Play free → ${CANONICAL.replace(/^https?:\/\//, "")}`, 130, 954);
 
         return new Promise((resolve, reject) =>
             canvas.toBlob((blob) => (blob ? resolve(blob) : reject(new Error("toBlob failed"))), "image/png")
@@ -625,7 +625,7 @@
 
     // ---------- sharing ----------
 
-    const shareUrl = () => (location.protocol === "https:" ? location.origin + location.pathname : CANONICAL);
+    const shareUrl = () => CANONICAL;
 
     function shareText() {
         return `I scored ${state.score.toLocaleString()} on 2048 by NX Gaming 🎮 Highest tile: ${maxTile()}. Can you beat it?`;
@@ -831,6 +831,9 @@
 
     const isLocal = ["localhost", "127.0.0.1"].includes(location.hostname);
     if ("serviceWorker" in navigator && location.protocol === "https:" && !isLocal) {
-        navigator.serviceWorker.register("sw.js").catch(() => {});
+        // Without a trailing slash (nesturex.com) the page sits just outside sw.js's default
+        // scope, so widen it to the page path; the site sends Service-Worker-Allowed for this.
+        const scope = location.pathname.endsWith("/") ? "./" : location.pathname;
+        navigator.serviceWorker.register("sw.js", { scope }).catch(() => {});
     }
 })();
