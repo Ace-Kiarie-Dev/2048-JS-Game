@@ -432,7 +432,7 @@
     const CANONICAL = "https://2048-classic-game.netlify.app/";
 
     const logo = new Image();
-    logo.src = "logo_nx_gaming.webp";
+    logo.src = window.NX_LOGO || "logo_nx_gaming.webp"; // inline copy keeps the canvas exportable
 
     // Read tile colours from the stylesheet so the card always matches the board
     const tileColorCache = {};
@@ -670,7 +670,8 @@
             ui.shareImg.src = shareObjectUrl;
             ui.shareImg.hidden = false;
             for (const b of [ui.shareNative, ui.shareDownload, ui.shareCopy]) b.disabled = false;
-        } catch {
+        } catch (e) {
+            console.warn("Share card failed:", e);
             shareBlob = null;
             setShareStatus("Couldn't create the image here, but the links below still work.");
         } finally {

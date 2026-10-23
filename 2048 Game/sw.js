@@ -1,7 +1,7 @@
 // Offline support: serve from cache, refresh the cache in the background.
 // Bump CACHE when shipping changes so old caches get cleared.
-const CACHE = "nx-2048-v2";
-const ASSETS = ["./", "index.html", "style.css", "main.js", "icon.svg", "fav.png", "manifest.webmanifest", "logo_nx_gaming.webp", "og.png"];
+const CACHE = "nx-2048-v3";
+const ASSETS = ["./", "index.html", "style.css", "main.js", "brand.js", "icon.svg", "fav.png", "manifest.webmanifest", "logo_nx_gaming.webp", "og.png"];
 
 self.addEventListener("install", (e) => {
     e.waitUntil(caches.open(CACHE).then((cache) => cache.addAll(ASSETS)));

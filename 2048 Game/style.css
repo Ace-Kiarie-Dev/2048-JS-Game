@@ -782,25 +782,56 @@ dialog {
 }
 
 .share-links {
-    display: flex;
-    flex-wrap: wrap;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-top: 12px;
+}
+
+/* Same chunky style as .btn, in each platform's brand colours */
+.social {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
     gap: 8px;
-    margin-top: 14px;
-}
-
-.pill {
-    padding: 8px 14px;
-    font: 600 13px/1 var(--font-ui);
-    color: var(--ink);
+    padding: 11px 12px;
+    font: 700 14px/1 var(--font-ui);
+    color: #fff;
     text-decoration: none;
-    background: var(--chip);
-    border: 1px solid var(--glass-line);
-    border-radius: 999px;
+    white-space: nowrap;
+    background: var(--social-bg);
+    border: 2px solid var(--edge);
+    border-radius: 10px;
+    box-shadow: 3px 3px 0 var(--edge);
     cursor: pointer;
+    transition: transform 80ms, box-shadow 80ms, filter 120ms;
 }
 
-.pill:hover {
-    border-color: var(--ink-faint);
+.social:hover {
+    filter: brightness(1.08);
+    transform: translate(-1px, -1px);
+    box-shadow: 4px 4px 0 var(--edge);
+}
+
+.social:active {
+    transform: translate(3px, 3px);
+    box-shadow: 0 0 0 var(--edge);
+}
+
+.social svg {
+    flex: none;
+    width: 18px;
+    height: 18px;
+}
+
+.social-wa { --social-bg: #25d366; color: #052e16; }
+.social-fb { --social-bg: #1877f2; }
+.social-x { --social-bg: #000; }
+.social-link { --social-bg: var(--surface); color: var(--ink); border-color: var(--surface-line); }
+
+/* X is black-on-black in dark mode, so give it a visible edge there */
+@media (prefers-color-scheme: dark) {
+    .social-x { border-color: #3a3a46; }
 }
 
 .share-status {
