@@ -26,7 +26,10 @@
         sound: $("sound"), statsBtn: $("stats-btn"), shareBtn: $("share-btn"),
         stats: $("stats"), statPlayed: $("stat-played"), statWon: $("stat-won"),
         statTile: $("stat-tile"), statMerges: $("stat-merges"), statBests: $("stat-bests"),
-        toast: $("toast"), year: $("year"),
+        share: $("share"), sharePreview: $("share-preview"), shareImg: $("share-img"),
+        shareNative: $("share-native"), shareDownload: $("share-download"), shareCopy: $("share-copy"),
+        shareWa: $("share-wa"), shareX: $("share-x"), shareFb: $("share-fb"), shareLink: $("share-link"),
+        shareStatus: $("share-status"), year: $("year"),
     };
 
     // ---------- storage ----------
@@ -236,6 +239,7 @@
                 .slice(-MAX_UNDO),
         };
         if (!canMove()) state.over = true;
+        best[size] = Math.max(best[size] || 0, state.score);
         mount();
         if (state.over) showOverlay("over");
         else if (state.won && !state.keepPlaying) showOverlay("win");
@@ -342,7 +346,7 @@
             ui.overlayKicker.textContent = "You did it";
             ui.overlayTitle.textContent = "2048!";
             ui.overlayText.textContent = `Score ${score}. Want to go for 4096?`;
-            actions.push(["Keep going", keepGoing, true], ["New game", () => startGame(state.size)], ["Share", share]);
+            actions.push(["Keep going", keepGoing, true], ["New game", () => startGame(state.size)], ["Share score", openShare]);
         } else {
             const isBest = state.score > 0 && state.score >= (best[state.size] || 0);
             ui.overlayKicker.textContent = "No moves left";
@@ -351,7 +355,7 @@
                 `You scored ${score}${isBest ? " — your best yet" : ""}. Highest tile: ${maxTile()}.`;
             actions.push(["Try again", () => startGame(state.size), true]);
             if (state.history.length && state.undosLeft > 0) actions.push([`Undo (${state.undosLeft})`, undo]);
-            actions.push(["Share", share]);
+            actions.push(["Share score", openShare]);
         }
         ui.overlayActions.replaceChildren(
             ...actions.map(([label, fn, primary]) => {
@@ -386,14 +390,7 @@
     }
 
     const later = (fn) => setTimeout(fn, SLIDE_MS + 220);
-
-    let toastTimer = 0;
-    function toast(msg) {
-        ui.toast.textContent = msg;
-        ui.toast.classList.add("show");
-        clearTimeout(toastTimer);
-        toastTimer = setTimeout(() => ui.toast.classList.remove("show"), 2200);
-    }
+    const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
     // ---------- sound & haptics ----------
 
@@ -425,27 +422,304 @@
     const thud = () => [330, 262, 196].forEach((f, i) => tone(f, i * 0.12, 0.3));
     const buzz = () => { if (navigator.vibrate) navigator.vibrate(8); };
 
-    // ---------- sharing & stats ----------
+    // ---------- share card ----------
+    // A 1080×1080 PNG with the NX Gaming logo, score and final board, drawn on a canvas
+    // so it can be shared to chats/socials or downloaded.
 
-    async function share() {
+    const CARD = 1080;
+    const DISPLAY = 'Unbounded, "Arial Black", sans-serif';
+    const UI_FONT = '"Space Grotesk", system-ui, sans-serif';
+    const CANONICAL = "https://2048-classic-game.netlify.app/";
+
+    const logo = new Image();
+    logo.src = "logo_nx_gaming.webp";
+
+    // Read tile colours from the stylesheet so the card always matches the board
+    const tileColorCache = {};
+    function tileColors(value) {
+        const v = Math.min(value, 8192);
+        if (!tileColorCache[v]) {
+            const probe = document.createElement("div");
+            probe.className = "tile";
+            probe.dataset.v = v;
+            probe.hidden = true;
+            document.body.append(probe);
+            const cs = getComputedStyle(probe);
+            tileColorCache[v] = { bg: cs.getPropertyValue("--t-bg").trim(), ink: cs.getPropertyValue("--t-ink").trim() };
+            probe.remove();
+        }
+        return tileColorCache[v];
+    }
+
+    function roundRect(ctx, x, y, w, h, r) {
+        ctx.beginPath();
+        ctx.moveTo(x + r, y);
+        ctx.arcTo(x + w, y, x + w, y + h, r);
+        ctx.arcTo(x + w, y + h, x, y + h, r);
+        ctx.arcTo(x, y + h, x, y, r);
+        ctx.arcTo(x, y, x + w, y, r);
+        ctx.closePath();
+    }
+
+    function glow(ctx, x, y, radius, color) {
+        const g = ctx.createRadialGradient(x, y, 0, x, y, radius);
+        g.addColorStop(0, color);
+        g.addColorStop(1, "rgba(0, 0, 0, 0)");
+        ctx.fillStyle = g;
+        ctx.fillRect(0, 0, CARD, CARD);
+    }
+
+    // Shrink the font until the text fits maxWidth
+    function fitFont(ctx, text, weight, family, size, maxWidth) {
+        do {
+            ctx.font = `${weight} ${size}px ${family}`;
+            size -= 4;
+        } while (ctx.measureText(text).width > maxWidth && size > 20);
+    }
+
+    function drawBoard(ctx, x, y, size) {
         const n = state.size;
-        const text = `I scored ${state.score.toLocaleString()} on 2048 (${n}×${n}), highest tile ${maxTile()}. Can you beat it?`;
-        const url = location.href.split("#")[0];
-        if (navigator.share) {
-            try {
-                await navigator.share({ title: "2048", text, url });
-                return;
-            } catch (e) {
-                if (e.name === "AbortError") return;
+        const gap = (size * 0.2) / (n + 4);
+        const cell = (size - gap * (n + 1)) / n;
+        const radius = Math.min(14, cell * 0.14);
+
+        ctx.fillStyle = "#c6f35a";
+        roundRect(ctx, x + 12, y + 12, size, size, 22);
+        ctx.fill();
+        ctx.fillStyle = "#1c1c25";
+        roundRect(ctx, x, y, size, size, 22);
+        ctx.fill();
+        ctx.lineWidth = 4;
+        ctx.strokeStyle = "#000";
+        ctx.stroke();
+
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        for (let r = 0; r < n; r++) {
+            for (let c = 0; c < n; c++) {
+                const cx = x + gap + c * (cell + gap);
+                const cy = y + gap + r * (cell + gap);
+                const t = state.grid[r][c];
+                roundRect(ctx, cx, cy, cell, cell, radius);
+                if (!t) {
+                    ctx.fillStyle = "#272732";
+                    ctx.fill();
+                    continue;
+                }
+                const { bg, ink } = tileColors(t.value);
+                ctx.fillStyle = bg;
+                ctx.fill();
+                ctx.lineWidth = 3;
+                ctx.strokeStyle = "rgba(0, 0, 0, 0.85)";
+                ctx.stroke();
+                const len = String(t.value).length;
+                const scale = len <= 2 ? 0.4 : len === 3 ? 0.33 : len === 4 ? 0.26 : 0.21;
+                ctx.fillStyle = ink;
+                ctx.font = `900 ${Math.round(cell * scale)}px ${DISPLAY}`;
+                ctx.fillText(String(t.value), cx + cell / 2, cy + cell / 2 + cell * 0.03);
             }
         }
+    }
+
+    function drawTag(ctx, x, y, text, highlight) {
+        ctx.font = `700 24px ${UI_FONT}`;
+        const w = ctx.measureText(text).width + 40;
+        roundRect(ctx, x, y, w, 52, 26);
+        ctx.fillStyle = highlight ? "#c6f35a" : "rgba(255, 255, 255, 0.08)";
+        ctx.fill();
+        if (!highlight) {
+            ctx.lineWidth = 2;
+            ctx.strokeStyle = "rgba(255, 255, 255, 0.14)";
+            ctx.stroke();
+        }
+        ctx.fillStyle = highlight ? "#11140a" : "#f3f1ea";
+        ctx.textAlign = "left";
+        ctx.textBaseline = "middle";
+        ctx.fillText(text, x + 20, y + 27);
+    }
+
+    async function drawCard() {
+        // Make sure the fonts and logo are ready, without hanging if we're offline
+        await Promise.race([
+            Promise.all([
+                document.fonts.load(`900 100px ${DISPLAY}`),
+                document.fonts.load(`700 30px ${UI_FONT}`),
+                logo.decode(),
+            ]).catch(() => {}),
+            wait(2500),
+        ]);
+
+        const canvas = document.createElement("canvas");
+        canvas.width = canvas.height = CARD;
+        const ctx = canvas.getContext("2d");
+
+        ctx.fillStyle = "#0e0e12";
+        ctx.fillRect(0, 0, CARD, CARD);
+        glow(ctx, 100, 40, 720, "rgba(198, 243, 90, 0.16)");
+        glow(ctx, 1020, 1060, 780, "rgba(139, 123, 255, 0.24)");
+
+        if (logo.complete && logo.naturalWidth) {
+            const w = 500;
+            const h = (w * logo.naturalHeight) / logo.naturalWidth;
+            ctx.drawImage(logo, (CARD - w) / 2, 64, w, h);
+        }
+
+        // "2048" badge, same as the site logo
+        ctx.save();
+        ctx.translate(90 + 130, 250 + 55);
+        ctx.rotate(-0.035);
+        ctx.fillStyle = "#8b7bff";
+        roundRect(ctx, -122, -47, 260, 110, 18);
+        ctx.fill();
+        ctx.fillStyle = "#c6f35a";
+        roundRect(ctx, -130, -55, 260, 110, 18);
+        ctx.fill();
+        ctx.lineWidth = 4;
+        ctx.strokeStyle = "#000";
+        ctx.stroke();
+        ctx.fillStyle = "#11140a";
+        ctx.font = `900 62px ${DISPLAY}`;
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.fillText("2048", 0, 4);
+        ctx.restore();
+
+        const isBest = state.score > 0 && state.score >= (best[state.size] || 0);
+        ctx.textAlign = "left";
+        ctx.textBaseline = "alphabetic";
+        ctx.fillStyle = "#c6f35a";
+        ctx.font = `700 26px ${UI_FONT}`;
+        ctx.fillText(state.over ? "FINAL SCORE" : "MY SCORE", 92, 430);
+        ctx.fillStyle = "#f3f1ea";
+        const score = state.score.toLocaleString();
+        fitFont(ctx, score, 900, DISPLAY, 120, 430);
+        ctx.fillText(score, 88, 550);
+
+        const tags = [[`BEST TILE  ${maxTile()}`], [`${state.size}×${state.size} BOARD`]];
+        if (isBest) tags.push(["NEW BEST!", true]);
+        else if (state.won) tags.push(["REACHED 2048", true]);
+        tags.forEach(([text, highlight], i) => drawTag(ctx, 90, 596 + i * 66, text, highlight));
+
+        drawBoard(ctx, 570, 236, 420);
+
+        // Call to action
+        roundRect(ctx, 90, 830, 900, 160, 24);
+        ctx.fillStyle = "rgba(255, 255, 255, 0.06)";
+        ctx.fill();
+        ctx.lineWidth = 2;
+        ctx.strokeStyle = "rgba(255, 255, 255, 0.12)";
+        ctx.stroke();
+        ctx.textAlign = "left";
+        ctx.textBaseline = "alphabetic";
+        ctx.fillStyle = "#f3f1ea";
+        ctx.font = `900 44px ${DISPLAY}`;
+        ctx.fillText("Can you beat it?", 130, 900);
+        ctx.fillStyle = "#c6f35a";
+        ctx.font = `700 32px ${UI_FONT}`;
+        ctx.fillText(`Play free → ${new URL(shareUrl()).host}`, 130, 954);
+
+        return new Promise((resolve, reject) =>
+            canvas.toBlob((blob) => (blob ? resolve(blob) : reject(new Error("toBlob failed"))), "image/png")
+        );
+    }
+
+    // ---------- sharing ----------
+
+    const shareUrl = () => (location.protocol === "https:" ? location.origin + location.pathname : CANONICAL);
+
+    function shareText() {
+        return `I scored ${state.score.toLocaleString()} on 2048 by NX Gaming 🎮 Highest tile: ${maxTile()}. Can you beat it?`;
+    }
+
+    const canShareFiles = (() => {
         try {
-            await navigator.clipboard.writeText(`${text} ${url}`);
-            toast("Score copied. Paste it anywhere.");
+            return !!navigator.canShare &&
+                navigator.canShare({ files: [new File([""], "card.png", { type: "image/png" })] });
         } catch {
-            toast("Couldn't copy, sorry.");
+            return false;
+        }
+    })();
+    const canCopyImage = !!(navigator.clipboard && window.ClipboardItem);
+
+    let shareBlob = null;
+    let shareObjectUrl = "";
+
+    function setShareStatus(msg) {
+        ui.shareStatus.textContent = msg;
+    }
+
+    async function openShare() {
+        const text = shareText();
+        const url = shareUrl();
+        ui.shareWa.href = `https://wa.me/?text=${encodeURIComponent(`${text} ${url}`)}`;
+        ui.shareX.href = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}`;
+        ui.shareFb.href = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`;
+
+        ui.shareNative.hidden = !canShareFiles;
+        ui.shareCopy.hidden = !canCopyImage;
+        for (const b of [ui.shareNative, ui.shareDownload, ui.shareCopy]) b.disabled = true;
+        ui.sharePreview.classList.add("is-loading");
+        ui.shareImg.hidden = true;
+        setShareStatus("");
+        if (!ui.share.open) ui.share.showModal();
+
+        try {
+            shareBlob = await drawCard();
+            if (shareObjectUrl) URL.revokeObjectURL(shareObjectUrl);
+            shareObjectUrl = URL.createObjectURL(shareBlob);
+            ui.shareImg.src = shareObjectUrl;
+            ui.shareImg.hidden = false;
+            for (const b of [ui.shareNative, ui.shareDownload, ui.shareCopy]) b.disabled = false;
+        } catch {
+            shareBlob = null;
+            setShareStatus("Couldn't create the image here, but the links below still work.");
+        } finally {
+            ui.sharePreview.classList.remove("is-loading");
         }
     }
+
+    const cardFileName = () => `2048-nx-gaming-${state.score}.png`;
+
+    async function shareImage() {
+        if (!shareBlob) return;
+        const file = new File([shareBlob], cardFileName(), { type: "image/png" });
+        try {
+            // The link goes in the text too, since some apps drop the url field when there's an image
+            await navigator.share({ files: [file], title: "2048 by NX Gaming", text: `${shareText()} ${shareUrl()}` });
+        } catch (e) {
+            if (e.name !== "AbortError") setShareStatus("Sharing didn't go through. Try Download instead.");
+        }
+    }
+
+    function downloadImage() {
+        if (!shareBlob) return;
+        const a = document.createElement("a");
+        a.href = shareObjectUrl;
+        a.download = cardFileName();
+        a.click();
+        setShareStatus("Saved. Post it anywhere you like.");
+    }
+
+    async function copyImage() {
+        if (!shareBlob) return;
+        try {
+            await navigator.clipboard.write([new ClipboardItem({ "image/png": shareBlob })]);
+            setShareStatus("Image copied. Paste it into a chat or post.");
+        } catch {
+            setShareStatus("Your browser blocked copying the image. Try Download instead.");
+        }
+    }
+
+    async function copyLink() {
+        try {
+            await navigator.clipboard.writeText(`${shareText()} ${shareUrl()}`);
+            setShareStatus("Link copied.");
+        } catch {
+            setShareStatus(`Copy this: ${shareUrl()}`);
+        }
+    }
+
+    // ---------- stats ----------
 
     function openStats() {
         ui.statPlayed.textContent = stats.played.toLocaleString();
@@ -469,7 +743,7 @@
     // ---------- input ----------
 
     document.addEventListener("keydown", (e) => {
-        if (ui.stats.open || e.altKey || e.metaKey) return;
+        if (document.querySelector("dialog[open]") || e.altKey || e.metaKey) return;
         if ((e.ctrlKey && e.code === "KeyZ") || (!e.ctrlKey && e.code === "KeyU")) {
             e.preventDefault();
             undo();
@@ -538,10 +812,16 @@
     });
 
     ui.statsBtn.addEventListener("click", openStats);
-    ui.shareBtn.addEventListener("click", share);
-    ui.stats.addEventListener("click", (e) => {
-        if (e.target === ui.stats) ui.stats.close(); // click on the backdrop
-    });
+    ui.shareBtn.addEventListener("click", openShare);
+    ui.shareNative.addEventListener("click", shareImage);
+    ui.shareDownload.addEventListener("click", downloadImage);
+    ui.shareCopy.addEventListener("click", copyImage);
+    ui.shareLink.addEventListener("click", copyLink);
+    for (const dialog of [ui.stats, ui.share]) {
+        dialog.addEventListener("click", (e) => {
+            if (e.target === dialog) dialog.close(); // click on the backdrop
+        });
+    }
 
     // ---------- boot ----------
 

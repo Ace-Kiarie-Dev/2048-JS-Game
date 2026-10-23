@@ -87,6 +87,10 @@ button {
     touch-action: manipulation;
 }
 
+[hidden] {
+    display: none !important;
+}
+
 :focus-visible {
     outline: 2px solid var(--accent-text);
     outline-offset: 2px;
@@ -97,6 +101,37 @@ button {
     display: flex;
     flex-direction: column;
     gap: 16px;
+}
+
+/* NX Gaming brand bar */
+
+.brand-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+/* The logo is white + blue artwork, so it always sits on a dark pill */
+.brand {
+    display: inline-flex;
+    align-items: center;
+    padding: 8px 14px;
+    background: #111116;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 999px;
+}
+
+.brand img {
+    display: block;
+    width: auto;
+    height: 18px;
+}
+
+.brand-note {
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--ink-faint);
 }
 
 /* header */
@@ -692,28 +727,87 @@ dialog h3 {
     font-variant-numeric: tabular-nums;
 }
 
-/* toast */
+/* share dialog */
 
-.toast {
-    position: fixed;
-    left: 50%;
-    bottom: max(24px, env(safe-area-inset-bottom));
-    z-index: 10;
-    padding: 10px 16px;
-    font-size: 14px;
-    font-weight: 600;
-    color: var(--bg);
-    background: var(--ink);
-    border-radius: 10px;
-    opacity: 0;
-    pointer-events: none;
-    transform: translate(-50%, 16px);
-    transition: opacity 200ms, transform 200ms;
+dialog {
+    max-height: calc(100dvh - 32px);
+    overflow-y: auto;
 }
 
-.toast.show {
-    opacity: 1;
-    transform: translate(-50%, 0);
+.share-dialog {
+    width: min(calc(100vw - 32px), 440px);
+}
+
+.share-preview {
+    position: relative;
+    aspect-ratio: 1;
+    overflow: hidden;
+    background: var(--chip);
+    border: 1px solid var(--glass-line);
+    border-radius: 12px;
+}
+
+.share-preview img {
+    display: block;
+    width: 100%;
+    height: 100%;
+}
+
+.share-preview.is-loading::after {
+    content: "Making your card…";
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    font-size: 14px;
+    color: var(--ink-soft);
+    animation: pulse 1s ease-in-out infinite alternate;
+}
+
+@keyframes pulse {
+    from { opacity: 0.4; }
+}
+
+.share-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 16px;
+}
+
+.share-actions .btn {
+    flex: 1 1 auto;
+    justify-content: center;
+    white-space: nowrap;
+}
+
+.share-links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 14px;
+}
+
+.pill {
+    padding: 8px 14px;
+    font: 600 13px/1 var(--font-ui);
+    color: var(--ink);
+    text-decoration: none;
+    background: var(--chip);
+    border: 1px solid var(--glass-line);
+    border-radius: 999px;
+    cursor: pointer;
+}
+
+.pill:hover {
+    border-color: var(--ink-faint);
+}
+
+.share-status {
+    min-height: 1.4em;
+    margin: 12px 0 0;
+    font-size: 13px;
+    color: var(--accent-text);
 }
 
 .noscript {
@@ -737,5 +831,6 @@ dialog h3 {
     .tile-inner,
     .board-wrap,
     .overlay,
-    .score-add { animation: none !important; }
+    .score-add,
+    .share-preview::after { animation: none !important; }
 }

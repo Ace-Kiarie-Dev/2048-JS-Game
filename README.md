@@ -1,4 +1,4 @@
-# 2048
+# 2048 by NX Gaming
 
 A free, no-sign-up 2048 you can play in the browser on phone or desktop.
 
@@ -14,7 +14,8 @@ A free, no-sign-up 2048 you can play in the browser on phone or desktop.
 - Win and game-over screens, with "keep going" past 2048
 - Merge sounds (toggleable), haptics on Android
 - Stats: games played, wins, highest tile, total merges
-- Share your score (native share sheet or clipboard)
+- Share a branded NX Gaming score card (image of your score + final board) via the phone share sheet, download, copy, WhatsApp, X or Facebook
+- Branded link previews (`og.png`) when the URL is pasted into chats/socials
 - Installable and playable offline (PWA)
 - Dark and light themes that follow the system setting
 

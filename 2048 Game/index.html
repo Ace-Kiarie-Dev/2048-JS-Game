@@ -3,15 +3,19 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-    <title>2048 — Free Online Puzzle Game</title>
+    <title>2048 — Free Online Puzzle Game | NX Gaming</title>
     <meta name="description" content="Play 2048 free in your browser. Slide tiles, merge numbers and chase the 2048 tile. Works on phone and desktop, saves your progress and plays offline.">
     <meta name="theme-color" content="#0e0e12">
     <link rel="canonical" href="https://2048-classic-game.netlify.app/">
     <meta property="og:type" content="website">
-    <meta property="og:title" content="2048 — Free Online Puzzle Game">
+    <meta property="og:site_name" content="NX Gaming">
+    <meta property="og:title" content="2048 by NX Gaming — Free Online Puzzle Game">
     <meta property="og:description" content="Slide, merge, reach 2048. Free, no sign-up, works offline.">
     <meta property="og:url" content="https://2048-classic-game.netlify.app/">
-    <meta property="og:image" content="https://2048-classic-game.netlify.app/fav.png">
+    <meta property="og:image" content="https://2048-classic-game.netlify.app/og.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta name="twitter:card" content="summary_large_image">
     <link rel="icon" href="icon.svg" type="image/svg+xml">
     <link rel="alternate icon" href="fav.png" type="image/png">
     <link rel="apple-touch-icon" href="fav.png">
@@ -24,6 +28,11 @@
 </head>
 <body>
     <main class="app">
+        <div class="brand-bar">
+            <span class="brand"><img src="logo_nx_gaming.webp" alt="NX Gaming" width="1200" height="152"></span>
+            <span class="brand-note">Free to play · No sign-up</span>
+        </div>
+
         <header class="top">
             <h1 class="logo">2048</h1>
             <div class="scores">
@@ -96,7 +105,7 @@
     </main>
 
     <footer>
-        <p>&copy; 2023–<span id="year">2026</span> 2048 · Made by <a href="https://peterkiarie.com/" target="_blank" rel="noopener noreferrer">Peter Kiarie</a></p>
+        <p>&copy; 2023–<span id="year">2026</span> 2048 · An NX Gaming game · Made by <a href="https://peterkiarie.com/" target="_blank" rel="noopener noreferrer">Peter Kiarie</a></p>
     </footer>
 
     <dialog id="stats" aria-labelledby="stats-title">
@@ -116,7 +125,29 @@
         <ul class="bests" id="stat-bests"></ul>
     </dialog>
 
-    <div class="toast" id="toast" role="status" aria-live="polite"></div>
+    <dialog id="share" class="share-dialog" aria-labelledby="share-title">
+        <div class="dialog-head">
+            <h2 id="share-title">Share your score</h2>
+            <form method="dialog"><button class="icon-btn" aria-label="Close">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/></svg>
+            </button></form>
+        </div>
+        <div class="share-preview" id="share-preview">
+            <img id="share-img" alt="Your 2048 score card">
+        </div>
+        <div class="share-actions">
+            <button type="button" class="btn btn-accent" id="share-native">Share image</button>
+            <button type="button" class="btn" id="share-download">Download</button>
+            <button type="button" class="btn" id="share-copy">Copy image</button>
+        </div>
+        <div class="share-links">
+            <a class="pill" id="share-wa" target="_blank" rel="noopener noreferrer">WhatsApp</a>
+            <a class="pill" id="share-x" target="_blank" rel="noopener noreferrer">X</a>
+            <a class="pill" id="share-fb" target="_blank" rel="noopener noreferrer">Facebook</a>
+            <button type="button" class="pill" id="share-link">Copy link</button>
+        </div>
+        <p class="share-status" id="share-status" role="status" aria-live="polite"></p>
+    </dialog>
 
     <noscript><p class="noscript">2048 needs JavaScript to run.</p></noscript>
 </body>
